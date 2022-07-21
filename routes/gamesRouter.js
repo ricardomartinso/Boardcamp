@@ -1,7 +1,9 @@
 import express from "express";
-import { getGames } from "../controllers/gamesController.js";
+import { createGames, getGames } from "../controllers/gamesController.js";
+import { gamesSchemaValidation } from "../middlewares/gamesSchemaValidationMiddleware.js";
 const gamesRouter = express.Router();
 
-gamesRouter.get(getGames);
+gamesRouter.get("/games", getGames);
+gamesRouter.post("/games", gamesSchemaValidation, createGames);
 
 export default gamesRouter;

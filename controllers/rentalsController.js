@@ -49,10 +49,6 @@ export async function createRentals(req, res) {
 
   const actualDate = dayjs().format("YYYY-MM-DD");
 
-  const { rows: customerInfo } = await connection.query(
-    `SELECT * FROM customers WHERE id = $1`,
-    [customerId]
-  );
   const { rows: gameInfo } = await connection.query(
     `SELECT * FROM games WHERE id = $1`,
     [gameId]
@@ -71,7 +67,12 @@ export async function createRentals(req, res) {
 export async function returnRentals(req, res) {
   const { id } = req.params;
 
-  if (id) {
+  const { rows: idExist } = await connection.query(
+    `SELECT * FROM rentals WHERE id = $1`,
+    [id]
+  );
+
+  if (idExist == true) {
     const gameToReturn = await connection.query(
       `SELECT * FROM rentals WHERE id = $1`,
       [id]

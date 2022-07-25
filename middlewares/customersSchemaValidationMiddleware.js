@@ -1,10 +1,11 @@
 import joi from "joi";
+import dayjs from "dayjs";
 import connection from "../db/postgres.js";
 
 export async function customersSchemaValidation(req, res, next) {
   const { name, phone, cpf, birthday } = req.body;
   const { id } = req.params;
-
+  const actualDate = dayjs().format("YYYY-MM-DD");
   const customersSchema = joi.object({
     name: joi.string().required(),
     phone: joi
@@ -16,7 +17,7 @@ export async function customersSchemaValidation(req, res, next) {
       .length(11)
       .pattern(/^[0-9]+$/)
       .required(),
-    birthday: joi.date().iso().required(),
+    birthday: joi.date().iso().max(actualDate).required(),
   });
 
   if (id) {

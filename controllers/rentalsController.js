@@ -35,14 +35,15 @@ export async function getRentals(req, res) {
   }
   if (!gameId && !customerId) {
     rentals = await connection.query(
-      `SELECT rentals.*, customers.id AS customer_id, customers.name AS customer_name, games.id AS game_id, games.name AS game_name, games."categoryId", categories.name AS "categoryName"
+      `SELECT rentals.*, customers.id 
+      AS customer_id, customers.name 
+      AS customer_name, games.id 
+      AS game_id, games.name 
+      AS game_name, games."categoryId", categories.name AS "categoryName"
       FROM rentals 
-      JOIN customers
-      ON rentals."customerId" = customers.id
-      JOIN games
-      ON rentals."gameId" = games.id
-      JOIN categories
-      ON categories.id = games.id`
+      JOIN customers ON rentals."customerId" = customers.id 
+      JOIN games ON rentals."gameId" = games.id
+      JOIN categories ON categories.id = games."categoryId"`
     );
   }
 
@@ -119,9 +120,9 @@ export async function returnRentals(req, res) {
     const daysRented = gameToReturn.rows[0].daysRented;
     const rentDate = gameToReturn.rows[0].rentDate;
     const returnDate = dayjs().format("YYYY-MM-DD");
-    const dateFormated = dayjs(returnDate);
+    const formatedDate = dayjs(returnDate);
 
-    const differenceDate = dateFormated.diff(rentDate) / 86400000;
+    const differenceDate = formatedDate.diff(rentDate) / 86400000;
     let delayedPrice;
 
     if (differenceDate > daysRented) {

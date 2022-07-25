@@ -2,19 +2,49 @@ import connection from "../db/postgres.js";
 import dayjs from "dayjs";
 
 export async function getRentals(req, res) {
-  const { customerId } = req.params;
-  const { gameId } = req.params;
+  const { customerId } = req.query;
+  const { gameId } = req.query;
 
-  const rentals = await connection.query(
-    `SELECT rentals.*, customers.id AS customer_id, customers.name AS customer_name, games.id AS game_id, games.name AS game_name, games."categoryId", categories.name AS "categoryName"
-    FROM rentals 
-    JOIN customers
-    ON rentals."customerId" = customers.id
-    JOIN games
-    ON rentals."gameId" = games.id
-    JOIN categories
-    ON categories.id = games.id`
-  );
+  let rentals;
+
+  if (customerId) {
+    rentals = await connection.query(
+      `SELECT rentals.*, customers.id AS customer_id, customers.name AS customer_name, games.id AS game_id, games.name AS game_name, games."categoryId", categories.name AS "categoryName"
+      FROM rentals 
+      JOIN customers
+      ON rentals."customerId" = customers.id
+      JOIN games
+      ON rentals."gameId" = games.id
+      JOIN categories
+      ON categories.id = games.id WHERE "customerId" = $1`,
+      [customerId]
+    );
+  }
+  if (gameId) {
+    rentals = await connection.query(
+      `SELECT rentals.*, customers.id AS customer_id, customers.name AS customer_name, games.id AS game_id, games.name AS game_name, games."categoryId", categories.name AS "categoryName"
+      FROM rentals 
+      JOIN customers
+      ON rentals."customerId" = customers.id
+      JOIN games
+      ON rentals."gameId" = games.id
+      JOIN categories
+      ON categories.id = games.id WHERE "gameId" = $1`,
+      [gameId]
+    );
+  }
+  if (!gameId && !customerId) {
+    rentals = await connection.query(
+      `SELECT rentals.*, customers.id AS customer_id, customers.name AS customer_name, games.id AS game_id, games.name AS game_name, games."categoryId", categories.name AS "categoryName"
+      FROM rentals 
+      JOIN customers
+      ON rentals."customerId" = customers.id
+      JOIN games
+      ON rentals."gameId" = games.id
+      JOIN categories
+      ON categories.id = games.id`
+    );
+  }
 
   const infosJson = [];
 
@@ -72,14 +102,15 @@ export async function returnRentals(req, res) {
     [id]
   );
 
-  if (idExist == true) {
+  if (idExist.length === 1) {
     const gameToReturn = await connection.query(
       `SELECT * FROM rentals WHERE id = $1`,
       [id]
     );
+
     const { rows: game } = await connection.query(
-      `SELECT * FROM GAMES WHERE id = $1`,
-      [gameToReturn.rows[0].id]
+      `SELECT * FROM games WHERE id = $1`,
+      [gameToReturn.rows[0].gameId]
     );
 
     if (gameToReturn.rows[0].returnDate != null) {
@@ -87,7 +118,7 @@ export async function returnRentals(req, res) {
     }
     const daysRented = gameToReturn.rows[0].daysRented;
     const rentDate = gameToReturn.rows[0].rentDate;
-    const returnDate = dayjs().format("2022-08-08");
+    const returnDate = dayjs().format("YYYY-MM-DD");
     const dateFormated = dayjs(returnDate);
 
     const differenceDate = dateFormated.diff(rentDate) / 86400000;
@@ -116,18 +147,22 @@ export async function returnRentals(req, res) {
 export async function deleteRentals(req, res) {
   const { id } = req.params;
 
-  if (id) {
+  const { rows: idExist } = await connection.query(
+    `SELECT * FROM rentals WHERE id = $1`,
+    [id]
+  );
+  if (idExist.length === 1) {
     const { rows: isReturnedGame } = await connection.query(
       `SELECT rentals."returnDate" FROM rentals WHERE id = $1`,
       [id]
     );
 
-    if (isReturnedGame.returnDate == null) {
+    if (isReturnedGame[0].returnDate == null) {
       return res.status(400).send("Jogo ainda não devolvido!");
     }
 
     await connection.query(`DELETE FROM rentals WHERE id = $1`, [id]);
-    res.sendStatus(200);
+    return res.sendStatus(200);
   }
 
   res.sendStatus(404);

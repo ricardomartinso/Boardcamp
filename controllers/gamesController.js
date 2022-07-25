@@ -2,6 +2,8 @@ import connection from "../db/postgres.js";
 
 export async function getGames(req, res) {
   const { name } = req.query;
+  const { offset } = req.query;
+  const { limit } = req.query;
 
   if (name) {
     const gamesFiltered = await connection.query(
@@ -16,9 +18,30 @@ export async function getGames(req, res) {
     return res.send(gamesFiltered.rows);
   }
 
-  const games = await connection.query(
+  let games;
+
+  games = await connection.query(
     'SELECT games.*, categories.name AS "categoryName" FROM games JOIN categories ON games."categoryId" = categories.id'
   );
+
+  if (offset) {
+    games = await connection.query(
+      `SELECT games.*, categories.name AS "categoryName" FROM games JOIN categories ON games."categoryId" = categories.id OFFSET $1`,
+      [offset]
+    );
+  }
+  if (limit) {
+    games = await connection.query(
+      `SELECT games.*, categories.name AS "categoryName" FROM games JOIN categories ON games."categoryId" = categories.id LIMIT $1`,
+      [limit]
+    );
+  }
+  if (limit && offset) {
+    games = await connection.query(
+      `SELECT games.*, categories.name AS "categoryName" FROM games JOIN categories ON games."categoryId" = categories.id LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+  }
 
   res.send(games.rows);
 }

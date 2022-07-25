@@ -2,6 +2,8 @@ import connection from "../db/postgres.js";
 
 export async function getCustomers(req, res) {
   const { cpf } = req.query;
+  const { offset } = req.query;
+  const { limit } = req.query;
 
   if (cpf) {
     const customersFiltered = await connection.query(
@@ -12,7 +14,25 @@ export async function getCustomers(req, res) {
     return res.send(customersFiltered.rows);
   }
 
-  const customers = await connection.query("SELECT * FROM customers");
+  let customers;
+  customers = await connection.query("SELECT * FROM customers");
+
+  if (offset) {
+    customers = await connection.query(`SELECT * FROM customers OFFSET $1`, [
+      offset,
+    ]);
+  }
+  if (limit) {
+    customers = await connection.query(`SELECT * FROM customers LIMIT $1`, [
+      limit,
+    ]);
+  }
+  if (limit && offset) {
+    customers = await connection.query(
+      `SELECT * FROM customers LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+  }
 
   res.send(customers.rows);
 }

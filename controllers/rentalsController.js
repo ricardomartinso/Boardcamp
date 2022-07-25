@@ -4,6 +4,8 @@ import dayjs from "dayjs";
 export async function getRentals(req, res) {
   const { customerId } = req.query;
   const { gameId } = req.query;
+  const { limit } = req.query;
+  const { offset } = req.query;
 
   let rentals;
 
@@ -44,6 +46,48 @@ export async function getRentals(req, res) {
       JOIN customers ON rentals."customerId" = customers.id 
       JOIN games ON rentals."gameId" = games.id
       JOIN categories ON categories.id = games."categoryId"`
+    );
+  }
+  if (limit) {
+    rentals = await connection.query(
+      `SELECT rentals.*, customers.id 
+      AS customer_id, customers.name 
+      AS customer_name, games.id 
+      AS game_id, games.name 
+      AS game_name, games."categoryId", categories.name AS "categoryName"
+      FROM rentals 
+      JOIN customers ON rentals."customerId" = customers.id 
+      JOIN games ON rentals."gameId" = games.id
+      JOIN categories ON categories.id = games."categoryId" LIMIT $1`,
+      [limit]
+    );
+  }
+  if (offset) {
+    rentals = await connection.query(
+      `SELECT rentals.*, customers.id 
+      AS customer_id, customers.name 
+      AS customer_name, games.id 
+      AS game_id, games.name 
+      AS game_name, games."categoryId", categories.name AS "categoryName"
+      FROM rentals 
+      JOIN customers ON rentals."customerId" = customers.id 
+      JOIN games ON rentals."gameId" = games.id
+      JOIN categories ON categories.id = games."categoryId" OFFSET $1`,
+      [offset]
+    );
+  }
+  if (limit && offset) {
+    rentals = await connection.query(
+      `SELECT rentals.*, customers.id 
+      AS customer_id, customers.name 
+      AS customer_name, games.id 
+      AS game_id, games.name 
+      AS game_name, games."categoryId", categories.name AS "categoryName"
+      FROM rentals 
+      JOIN customers ON rentals."customerId" = customers.id 
+      JOIN games ON rentals."gameId" = games.id
+      JOIN categories ON categories.id = games."categoryId" LIMIT $1 OFFSET $2`,
+      [limit, offset]
     );
   }
 
